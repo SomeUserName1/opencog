@@ -1,5 +1,6 @@
 # Write code for finding and initialising agents in cython because it'll
 # probably be simpler
+from __future__ import unicode_literals
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.list cimport list as cpplist
@@ -49,7 +50,7 @@ cdef api requests_and_agents_t load_req_agent_module(string& module_name) with g
     cdef requests_and_agents_t results
     try:
         filep, pathname, desc = imp.find_module(c_str)
-    except Exception, e:
+    except Exception as e:
         s = "Exception while searching for module " + c_str + "\n"
         s = traceback.format_exc(10)
         results.err_string = string(s)
@@ -62,7 +63,7 @@ cdef api requests_and_agents_t load_req_agent_module(string& module_name) with g
         # each entry is a tuple with ("ClassName", <classobject>)
         agent_classes = find_subclasses(the_module,opencog.cogserver.MindAgent)
         request_classes = find_subclasses(the_module,opencog.cogserver.Request)
-    except Exception, e:
+    except Exception as e:
         s = "Exception while loading module " + c_str + "\n"
         s += traceback.format_exc(10)
         results.err_string = string(s)
@@ -79,21 +80,21 @@ cdef api requests_and_agents_t load_req_agent_module(string& module_name) with g
         summy = ""
         try :
             summy = r[1].summary
-        except Exception, e:
+        except Exception as e:
             summy = "Command summary is missing in the python code!"
         results.req_summary.push_back(string(summy))
 
         desc = ""
         try :
             desc = r[1].description
-        except Exception, e:
+        except Exception as e:
             desc = "Command description is missing in the python code!"
         results.req_description.push_back(string(desc))
 
         is_shell = False
         try :
             is_shell = r[1].is_shell
-        except Exception, e:
+        except Exception as e:
             is_shell = False
         results.req_is_shell.push_back(is_shell)
 
@@ -116,8 +117,8 @@ cdef api object instantiate_agent(string module_name, string agent_name, cAgent 
         if agentClass:
             agent = agentClass()
             agent.c_obj = cpp_agent
-    except Exception, e:
-        print traceback.format_exc(10)
+    except Exception as e:
+        print(traceback.format_exc(10))
     finally:
         # Since we may exit via an exception, close fp explicitly.
         if filep: filep.close()
@@ -130,7 +131,7 @@ cdef api string run_agent(object o, cAtomSpace *c_atomspace) with gil:
     # Propagates exceptions to PyMindAgent to throw
     try:
         o.run(a)
-    except Exception, e:
+    except Exception as e:
         s = traceback.format_exc(20)
         result = string(s)
     return result
@@ -152,8 +153,8 @@ cdef api object instantiate_request(string module_name, string r_name, cRequest 
         if rClass:
             request = rClass()
             request.c_obj = cpp_request
-    except Exception, e:
-        print traceback.format_exc(10)
+    except Exception as e:
+        print(traceback.format_exc(10))
     finally:
         # Since we may exit via an exception, close fp explicitly.
         if filep: filep.close()
@@ -176,7 +177,7 @@ cdef api string run_request(object o, cpplist[string] args, cAtomSpace *c_atomsp
         inc(the_iter)
     try:
         o.run(args=args_as_python_str_list,atomspace=a)
-    except Exception, e:
+    except Exception as e:
         s = traceback.format_exc(10)
         result = string(s)
     return result

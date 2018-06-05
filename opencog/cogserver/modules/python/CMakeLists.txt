@@ -1,26 +1,38 @@
-
 # ----------------------------------------
 # Python module to be loaded by CogServer
 
+MACRO(BUILD_PY_MODULE PY_V)
 INCLUDE_DIRECTORIES(
-   ${PYTHON_INCLUDE_DIRS}
+   ${PYTHON${PY_V}_INCLUDE_DIRS}
    ${CMAKE_CURRENT_SOURCE_DIR}
    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-ADD_LIBRARY (PythonModule SHARED
+ADD_LIBRARY (PythonModule${PY_V} SHARED
 	PythonModule.cc 
 	PyMindAgent.cc
 	PyRequest.cc
 )
 
-TARGET_LINK_LIBRARIES(PythonModule
+TARGET_LINK_LIBRARIES(PythonModule${PY_V}
 	server
-	agent_finder
+	agent_finder${PY_V}
 	${ATOMSPACE_LIBRARIES}
-	${PYTHON_LIBRARIES}
+	${PYTHON${PY_V}_LIBRARIES}
 )
-ADD_DEPENDENCIES(PythonModule agent_finder)
+ADD_DEPENDENCIES(PythonModule${PY_V} agent_finder${PY_V})
 
-INSTALL (TARGETS PythonModule DESTINATION
+INSTALL (TARGETS PythonModule${PY_V} DESTINATION
 	"lib${LIB_DIR_SUFFIX}/opencog/modules")
+ENDMACRO()
+
+if (PY_2_BINDINGS)
+	BUILD_PY_MODULE(2) # add define to import propper agent_finder_api${PY_V}.h
+	ADD_DEFINITIONS(-DCOMPLILING_WITH_PY)
+	SET(COMPILING_WITH_PY2 TRUE)
+endif()
+if (PY_3_BINDINGS)
+	BUILD_PY_MODULE(3)
+	SET(COMPILING_WITH_PY2 FALSE)
+endif()
+REMOVE_DEFINITIONS(COMPILING_WITH_PY2 TRUE) # clean up

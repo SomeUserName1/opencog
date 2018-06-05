@@ -1,4 +1,4 @@
-
+from __future__ import unicode_literals
 # Basic wrapping for std::string conversion
 cdef extern from "<string>" namespace "std":
     cdef cppclass string:

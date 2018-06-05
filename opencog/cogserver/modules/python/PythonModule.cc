@@ -34,7 +34,12 @@
 #include "PythonModule.h"
 
 #include <opencog/cython/opencog/agent_finder_types.h>
-#include <opencog/cython/opencog/agent_finder_api.h>
+
+#if COMPILING_WITH_PY2
+    #include <opencog/cython/opencog/agent_finder2_api.h>
+#else
+    #include <opencog/cython/opencog/agent_finder3_api.h>
+#endif
 
 using std::vector;
 using std::string;

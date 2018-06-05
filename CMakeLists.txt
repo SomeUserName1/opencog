@@ -348,67 +348,43 @@ MESSAGE(STATUS "${PROTOBUF_DIR_MESSAGE}")
 #
 # NOTE: Python interpreter is needed for runing python unit tests,
 # and for running the FindCython module.
+FIND_PACKAGE(BothPython)
+FIND_PACKAGE(Cython)
 
-FIND_PACKAGE(Python3Interp)
-IF (3.4.0 VERSION_LESS ${PYTHON3_VERSION_STRING})
-	SET (HAVE_PY_INTERP 1)
-	SET (PYTHON_VER python3.5)
-	MESSAGE(STATUS "Python ${PYTHON3_VERSION_STRING} interpreter found.")
+IF(NOT CYTHON_FOUND) # No Cython
+	MESSAGE(STATUS "Cython executable not found.")
+ELSEIF(NOT PYTHON2INTERP_FOUND AND NOT PYTHON3INTERP_FOUND) # No Python Interp
+	MESSAGE(STATUS "No Python Interpreter found")
+ELSEIF(NOT PYTHON2LIBS_FOUND AND  NOT PYTHON3LIBS_FOUND) # No Python Libs
+	MESSAGE(MESSAGE(STATUS "No Python Libs found"))
+ELSE() # the case of non fitting interp and lib versions is covered in FindBothPython.cmake
+	ADD_DEFINITIONS(-DHAVE_CYTHON)
+	SET(HAVE_CYTHON 1)
 ENDIF()
 
-IF (NOT HAVE_PY_INTERP)
-	FIND_PACKAGE(PythonInterp)
-	IF (2.7.0 VERSION_LESS ${PYTHON_VERSION_STRING})
-		SET (HAVE_PY_INTERP 1)
-		SET (PYTHON_VER python2.7)
-		MESSAGE(STATUS "Python ${PYTHON_VERSION_STRING} interpreter found.")
+FOREACH(PY_V 3 2)
+	IF(PYTHON${PY_V}INTERP_FOUND AND PYTHON${PY_V}LIBS_FOUND) # Using Python 2
+		SET(PY_${PY_V}_BINDINGS TRUE)
+		MESSAGE(STATUS "Building Python ${PY_V} bindings")
+	ELSE()
+		MESSAGE(STATUS "Python ${PY_V} not found")
 	ENDIF()
+ENDFOREACH()
+
+
+# ------- Tests for Python -------------
+
+FIND_PROGRAM(NOSETESTS_EXECUTABLE nosetests)
+FIND_PROGRAM(NOSETESTS3_EXECUTABLE nosetests3)
+
+IF (NOSETESTS_EXECUTABLE AND PY_2_BINDINGS)
+	SET(HAVE_NOSETESTS 1)
+	MESSAGE(STATUS "Found nosetests executable ")
 ENDIF()
-
-FIND_PACKAGE(PythonLibs)
-IF (PYTHONLIBS_FOUND AND
-     ((PYTHON3INTERP_FOUND AND 3.4.0 VERSION_LESS ${PYTHONLIBS_VERSION_STRING})
-     OR
-     (2.7.0 VERSION_LESS ${PYTHONLIBS_VERSION_STRING})))
-	SET (HAVE_PY_LIBS 1)
-	MESSAGE(STATUS "Python ${PYTHONLIBS_VERSION_STRING} libraries found.")
-ELSE()
-	MESSAGE(STATUS "Python libraries NOT found.")
-ENDIF()
-
-# Cython is used to generate python bindings.
-IF (HAVE_PY_INTERP)
-	FIND_PACKAGE(Cython 0.19.0)
-
-	IF (CYTHON_FOUND AND HAVE_PY_LIBS)
-		# Find python destination dir for python bindings because it may
-		# differ on each operating system.
-		ADD_DEFINITIONS(-DHAVE_CYTHON)
-		SET(HAVE_CYTHON 1)
-
-		# Hack together some reasonable install location.
-		SET(PYTHON_DEST
-			"lib${LIB_DIR_SUFFIX}/${PYTHON_VER}/dist-packages/opencog")
-		MESSAGE(STATUS
-			"Python install dir: ${CMAKE_INSTALL_PREFIX}/${PYTHON_DEST}" )
-
-	ELSE (CYTHON_FOUND AND HAVE_PY_LIBS)
-		IF(NOT CYTHON_FOUND)
-			MESSAGE(STATUS "Cython executable not found.")
-		ENDIF(NOT CYTHON_FOUND)
-	ENDIF (CYTHON_FOUND AND HAVE_PY_LIBS)
-
-	# Nosetests will find and automatically run python tests.
-	IF (PYTHON3INTERP_FOUND)
-		FIND_PROGRAM(NOSETESTS_EXECUTABLE nosetests3)
-	ELSE ()
-		FIND_PROGRAM(NOSETESTS_EXECUTABLE nosetests)
-	ENDIF ()
-	IF (NOSETESTS_EXECUTABLE AND CYTHON_FOUND AND HAVE_PY_LIBS)
-		SET(HAVE_NOSETESTS 1)
-		MESSAGE(STATUS "Using nosetests executable " ${NOSETESTS_EXECUTABLE})
-	ENDIF (NOSETESTS_EXECUTABLE AND CYTHON_FOUND AND HAVE_PY_LIBS)
-ENDIF (HAVE_PY_INTERP)
+IF(NOSETESTS3_EXECUTABLE AND PY_3_BINDINGS)
+	SET(HAVE_NOSETESTS3 1)
+	MESSAGE(STATUS "Found nosetests3 executable ")
+ENDIF ()
 
 # -----------------------------------------------------------------------------
 
@@ -434,9 +410,8 @@ FIND_PACKAGE(TBB)
 IF (TBB_FOUND)
 	SET(HAVE_TBB 1)
 ELSE (TBB_FOUND)
-	SET(TBB_DIR_MESSAGE "Intel TBB (Threaded Building Blocks) was not found; the AtomSpace Publisher module will not be built. Installation instructions: https://www.threadingbuildingblocks.org/download")
+	MESSAGE(STATUS "Intel TBB (Threaded Building Blocks) was not found; the AtomSpace Publisher module will not be built. Installation instructions: https://www.threadingbuildingblocks.org/download")
 ENDIF (TBB_FOUND)
-MESSAGE(STATUS "${TBB_DIR_MESSAGE}")
 
 # Optional, currently needed only to hush up DRD in util/Logger.cc
 FIND_PACKAGE(VALGRIND)
@@ -476,9 +451,6 @@ MESSAGE(STATUS "${STACK_FOUND_MESSAGE}")
 
 # ==========================================================
 # Decide what to build, based on the packages found.
-
-IF(Boost_FOUND)
-ENDIF(Boost_FOUND)
 
 IF(HAVE_ATOMSPACE AND HAVE_COGUTIL)
 	SET(HAVE_ATTENTION 1)
@@ -734,21 +706,22 @@ FIND_PACKAGE(Doxygen)
 ADD_SUBDIRECTORY(doc EXCLUDE_FROM_ALL)
 
 # Show a summary of what we got
+SUMMARY_ADD("Server" "The CogServer" HAVE_SERVER)
 SUMMARY_ADD("Attention" "Agents for attention allocation dynamics" HAVE_ATTENTION)
-SUMMARY_ADD("Blopex" "BLOPEX block eigenvalue solver" HAVE_LAPACK)
-SUMMARY_ADD("Cython bindings" "Cython (python) bindings" HAVE_CYTHON)
 SUMMARY_ADD("Dim. Embedding" "Compute dimensional embedding of the AtomSpace" HAVE_DIMEMBED)
 SUMMARY_ADD("Doxygen" "Code documentation" DOXYGEN_FOUND)
 SUMMARY_ADD("GTK Visualizer" "GTK3-based Atomspace Visualizer" HAVE_GTK)
-SUMMARY_ADD("Python tests" "Python bindings nose tests" HAVE_NOSETESTS)
-SUMMARY_ADD("REST Events" "REST Atomspace Event Publisher module"
-	HAVE_EVENT_PUBLISHING_DEPENDENCIES)
-SUMMARY_ADD("Server" "The CogServer" HAVE_SERVER)
+SUMMARY_ADD("NLP" "Natural Language Processing" HAVE_NLP)
+SUMMARY_ADD("PatternMiner" "Pattern Miner" HAVE_ATOMSPACE)
 SUMMARY_ADD("SpaceTime" "3D Space-Time object tracker" HAVE_OCTOMAP)
 SUMMARY_ADD("Spatial" "Vizualisation of the 3D spacemap" HAVE_SPATIAL_TOOLS AND HAVE_OCTOMAP)
 SUMMARY_ADD("Unit tests" "Unit tests" CXXTEST_FOUND)
-SUMMARY_ADD("NLP" "Natural Language Processing" HAVE_NLP)
-SUMMARY_ADD("PatternMiner" "Pattern Miner" HAVE_ATOMSPACE)
-SUMMARY_ADD("Haskell codes" "Logic via Lojban" HAVE_STACK AND BUILD_LOJBAN)
+
+SUMMARY_ADD("REST Events" "REST Atomspace Event Publisher module" HAVE_EVENT_PUBLISHING_DEPENDENCIES)
+SUMMARY_ADD("Cython bindings" "Cython (python) bindings" (PY_2_BINDINGS OR PY_3_BINDINGS))
+SUMMARY_ADD("Python tests" "Python bindings nose tests" (HAVE_NOSETESTS AND PY_2_BINDINGS) OR (HAVE_NOSETESTS3 AND PY_3_BINDINGS))
+SUMMARY_ADD("Blopex" "BLOPEX block eigenvalue solver" HAVE_LAPACK)
+
+#SUMMARY_ADD("Haskell codes" "Logic via Lojban" HAVE_STACK AND BUILD_LOJBAN) Build Lojban is never set... so ...
 
 SUMMARY_SHOW()

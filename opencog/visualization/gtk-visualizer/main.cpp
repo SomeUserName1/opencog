@@ -130,16 +130,16 @@ static void ShowUnknownError()
 	ShowError(" I'm sorry, Dave. I'm afraid I can't do that. (unknown error)");
 }
 
-static void ShowWarning (const gchar *message)
-{
-    GtkWidget *dialog = NULL;
-
-    dialog = gtk_message_dialog_new (GTK_WINDOW (window), GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_CLOSE, "%s", message);
-    gtk_window_set_title (GTK_WINDOW (dialog), "OpenCog Atomspace Visualizer");
-    gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER);
-    gtk_dialog_run (GTK_DIALOG (dialog));
-    gtk_widget_destroy (dialog);
-}
+//static void ShowWarning (const gchar *message)
+//{
+//    GtkWidget *dialog = NULL;
+//
+//    dialog = gtk_message_dialog_new (GTK_WINDOW (window), GTK_DIALOG_MODAL, GTK_MESSAGE_WARNING, GTK_BUTTONS_CLOSE, "%s", message);
+//    gtk_window_set_title (GTK_WINDOW (dialog), "OpenCog Atomspace Visualizer");
+//    gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER);
+//    gtk_dialog_run (GTK_DIALOG (dialog));
+//    gtk_widget_destroy (dialog);
+//}
 
 static void ShowInfo (const gchar *message)
 {
@@ -257,7 +257,7 @@ void StartNewGraph(vector<Vertex*> vertices)
 	selectedVertex=NULL;
 
 	GdkWindow *gdkWindow = gtk_widget_get_window(window); //TODO still doesn't work...
-	GdkCursor *gdkCursor = gdk_cursor_new(GDK_WATCH);
+	GdkCursor *gdkCursor = gdk_cursor_new_for_display(gdk_display_get_default (), GDK_WATCH);
 	gdk_window_set_cursor(gdkWindow,gdkCursor);
 
 	graph = Graph(&atomSpaceInterface);
