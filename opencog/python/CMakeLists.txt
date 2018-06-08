@@ -1,7 +1,7 @@
 MACRO(BUILD_PY_RESTAPI PY_V)
 	INSTALL (FILES
 		web/__init__.py
-		DESTINATION "${PYTHON${PY_V}_SITE_PACKAGES}/web")
+		DESTINATION "${PYTHON${PY_V}_SITE_PACKAGES}/opencog/web")
 
 	INSTALL (FILES
 		web/api/apiatomcollection.py
@@ -13,12 +13,12 @@ MACRO(BUILD_PY_RESTAPI PY_V)
 		web/api/mappers.py
 		web/api/restapi.py
 		web/api/utilities.py
-		DESTINATION "${PYTHON${PY_V}_SITE_PACKAGES}/web/api")
+		DESTINATION "${PYTHON${PY_V}_SITE_PACKAGES}/opencog/web/api")
 
 	INSTALL (FILES
 		web/socketio/atomspace_publisher.py
 		web/socketio/__init__.py
-		DESTINATION "${PYTHON${PY_V}_SITE_PACKAGES}/web/socketio")
+		DESTINATION "${PYTHON${PY_V}_SITE_PACKAGES}/opencog/web/socketio")
 ENDMACRO()
 
 if (PY_2_BINDINGS)
